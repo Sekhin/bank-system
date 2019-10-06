@@ -4,30 +4,36 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.javastart.commonservice.controller.dto.AccountDTO;
 import com.javastart.commonservice.controller.dto.BillRequestDTO;
+import com.javastart.commonservice.controller.dto.BillResponseDTO;
 import com.javastart.commonservice.controller.dto.CustomerResponseDTO;
 import com.javastart.commonservice.exception.BillServiceException;
+import com.javastart.commonservice.exception.CommonServiceException;
+import com.javastart.commonservice.http.RestService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
 public class CustomerService {
 
-    public static final String ACCOUNT_URL = "http://localhost:9999/accounts";
-    public static final String BILL_URL = "http://localhost:11111/bills";
-    private final RestTemplate restTemplate;
+    @Value("${account.service.url}")
+    private String accountUrl;
+
+    @Value("${bill.service.url}")
+    private String billUrl;
+
     private final ObjectMapper objectMapper;
 
+    private final RestService restService;
+
     @Autowired
-    public CustomerService(RestTemplate restTemplate, ObjectMapper objectMapper) {
-        this.restTemplate = restTemplate;
+    public CustomerService(RestService restService, ObjectMapper objectMapper) {
+        this.restService = restService;
         this.objectMapper = objectMapper;
     }
 
@@ -44,13 +50,45 @@ public class CustomerService {
     }
 
     public CustomerResponseDTO getCustomerById(Long accountId, Long billId) {
-        StringBuilder accountStringBuilder = new StringBuilder(ACCOUNT_URL);
-        accountStringBuilder.append("/");
-        accountStringBuilder.append(accountId);
-        ResponseEntity<AccountDTO> accountEntity = restTemplate.getForEntity(accountStringBuilder.toString(),
-                AccountDTO.class);
-        AccountDTO accountDTO = accountEntity.getBody();
-        return new CustomerResponseDTO(null, accountDTO);
+        StringBuilder accountUrlBuilder = new StringBuilder(accountUrl);
+        accountUrlBuilder.append("/");
+        accountUrlBuilder.append(accountId);
+        AccountDTO accountResponse = getAccount(accountUrlBuilder.toString());
+
+        StringBuilder billUrlBuilder = new StringBuilder(billUrl);
+        billUrlBuilder.append("/");
+        billUrlBuilder.append(billId);
+        BillResponseDTO billResponse = getBill(billUrlBuilder.toString());
+
+        return new CustomerResponseDTO(billResponse, accountResponse);
+    }
+
+    private BillResponseDTO getBill(String url) {
+        return serializedBillDTO(restService.getForEntity(url));
+    }
+
+    private BillResponseDTO serializedBillDTO(ResponseEntity<String> responseEntity){
+        String body = responseEntity.getBody();
+        try {
+            return objectMapper.readValue(body, BillResponseDTO.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CommonServiceException(e.getMessage());
+        }
+    }
+
+    private AccountDTO getAccount(String url) {
+        return serializedAccountDTO(restService.getForEntity(url));
+    }
+
+    private AccountDTO serializedAccountDTO(ResponseEntity<String> responseEntity) {
+        String body = responseEntity.getBody();
+        try {
+            return objectMapper.readValue(body, AccountDTO.class);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new CommonServiceException(e.getMessage());
+        }
     }
 
     private ResponseEntity<String> getBillResponse(BigDecimal amount, Boolean isOverdraftEnabled, Long accountId) {
@@ -61,7 +99,7 @@ public class CustomerService {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
-        return getStringResponseEntity(billJson);
+        return restService.postForEntity(billJson, billUrl);
     }
 
     private ResponseEntity<String> getAccountResponse(String name, String phone, String mail) {
@@ -72,17 +110,6 @@ public class CustomerService {
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }
-        return getStringResponseEntity(accountJson);
-    }
-
-    private ResponseEntity<String> getStringResponseEntity(String billJson) {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<String> entity = new HttpEntity<>(billJson, headers);
-        ResponseEntity<String> responseEntity = null;
-        if (billJson != null){
-            responseEntity = restTemplate.postForEntity(BILL_URL, entity, String.class);
-        }
-        return responseEntity;
+        return restService.postForEntity(accountJson, accountUrl);
     }
 }

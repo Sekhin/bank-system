@@ -3,13 +3,13 @@ package com.javastart.commonservice.controller.dto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
+import java.math.BigDecimal;
+
 @AllArgsConstructor
 @NoArgsConstructor
-public class CustomerResponseDTO {
-    private BillResponseDTO billRequestDTO;
-    private AccountDTO accountDTO;
+@Getter
+public class BillResponseDTO {
+    private BigDecimal amount;
+    private Boolean isOverdraftEnabled;
 }
