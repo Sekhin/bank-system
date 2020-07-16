@@ -4,12 +4,15 @@ import com.javastart.billservice.controller.dto.BillRequestDTO;
 import com.javastart.billservice.controller.dto.BillResponseDTO;
 import com.javastart.billservice.service.BillService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
+@Validated
 public class BillController {
 
     private final BillService billService;
@@ -20,7 +23,7 @@ public class BillController {
     }
 
     @PostMapping("/bills")
-    public Long createBill(@RequestBody BillRequestDTO billRequestDTO){
+    public Long createBill(@RequestBody @Valid BillRequestDTO billRequestDTO){
         return billService.saveBill(billRequestDTO.getAmount(), billRequestDTO.getIsOverdraftEnabled(),
                 billRequestDTO.getAccountId());
     }
@@ -40,5 +43,16 @@ public class BillController {
         return billService.getBills().stream()
                 .map(BillResponseDTO::new)
                 .collect(Collectors.toList());
+    }
+
+    @PutMapping("/bills")
+    public String updateBill(@RequestBody @Valid BillRequestDTO billRequestDTO) {
+        return billService.updateBill(billRequestDTO.getAmount(), billRequestDTO.getIsOverdraftEnabled(),
+                billRequestDTO.getAccountId());
+    }
+
+    @DeleteMapping("/bills/{billId}")
+    public void deleteBillById(@PathVariable Long billId) {
+        billService.deleteBillById(billId);
     }
 }

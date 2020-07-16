@@ -3,12 +3,15 @@ package com.javastart.accountservice.controller;
 import com.javastart.accountservice.controller.dto.AccountResponseDTO;
 import com.javastart.accountservice.service.AccountService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
+@Validated
 public class AccountController {
 
     private final AccountService accountService;
@@ -19,9 +22,10 @@ public class AccountController {
     }
 
     @PostMapping("/accounts")
-    public Long saveAccount(@RequestBody AccountResponseDTO accountResponseDTO) {
+    public Long saveAccount(@RequestBody @Valid AccountResponseDTO accountResponseDTO) {
         return accountService.saveAccount(accountResponseDTO.getName(),
-                accountResponseDTO.getPhone(), accountResponseDTO.getMail());
+                accountResponseDTO.getPhone(),
+                accountResponseDTO.getMail());
     }
 
     @GetMapping("/accounts/{id}")
@@ -35,5 +39,10 @@ public class AccountController {
                 .stream()
                 .map(AccountResponseDTO::new)
                 .collect(Collectors.toList());
+    }
+
+    @DeleteMapping("/accounts/{id}")
+    public void deleteAccountById(@PathVariable Long id) {
+        accountService.deleteAccountById(id);
     }
 }

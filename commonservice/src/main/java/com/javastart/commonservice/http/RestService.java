@@ -29,7 +29,20 @@ public class RestService {
         return responseEntity;
     }
 
+    public void put(String json, String url) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> entity = new HttpEntity<>(json, headers);
+        if (json != null) {
+            restTemplate.put(url, entity);
+        }
+    }
+
     public ResponseEntity<String> getForEntity(String url) {
         return restTemplate.getForEntity(url, String.class);
+    }
+
+    public void delete(String url) {
+        restTemplate.delete(url);
     }
 }

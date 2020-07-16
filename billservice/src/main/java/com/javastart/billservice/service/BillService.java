@@ -5,6 +5,7 @@ import com.javastart.billservice.exception.BillNotFoundException;
 import com.javastart.billservice.repository.BillRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -37,5 +38,16 @@ public class BillService {
 
     public List<Bill> getBills() {
         return billRepository.findAll();
+    }
+
+    @Transactional
+    public void deleteBillById(Long billId) {
+        billRepository.deleteBillById(billId);
+    }
+
+    @Transactional
+    public String updateBill(BigDecimal amount, Boolean isOverdraftEnabled, Long accountId) {
+        billRepository.updateBillByAccountId(amount, isOverdraftEnabled, accountId);
+        return "Success";
     }
 }

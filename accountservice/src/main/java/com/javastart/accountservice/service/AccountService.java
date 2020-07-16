@@ -5,6 +5,8 @@ import com.javastart.accountservice.exception.AccountNotFoundException;
 import com.javastart.accountservice.repository.AccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 
 @Service
@@ -22,11 +24,16 @@ public class AccountService {
     }
 
     public Account getAccountById(Long id) {
-        return accountRepository.findById(id).orElseThrow(() ->
-                new AccountNotFoundException("Can't find account with id: " + id));
+        return accountRepository.findById(id)
+                .orElseThrow(() -> new AccountNotFoundException("Can't find account with id: " + id));
     }
 
     public List<Account> getAccounts(){
         return accountRepository.findAll();
+    }
+
+    @Transactional
+    public void deleteAccountById(Long id) {
+        accountRepository.deleteAccountById(id);
     }
 }
